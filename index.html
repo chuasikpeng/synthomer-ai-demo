@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coatings Technical Intelligence Assistant — Combined Demo</title>
+<style>
+:root{--navy:#112740;--teal:#00858c;--mint:#e2f4f3;--pale:#f1f6f8;--orange:#ef8f37;--ink:#273541;--muted:#5b6c79}
+*{box-sizing:border-box} body{margin:0;background:#edf2f4;color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:var(--navy);color:white;padding:26px 20px 24px} header .wrap,main{max-width:900px;margin:auto}
+.kicker{color:#6dd1cf;font-size:12px;font-weight:800;letter-spacing:.12em}
+h1{font-size:clamp(25px,5vw,38px);line-height:1.12;margin:8px 0 10px}
+header p{max-width:700px;margin:0;color:#dce9ef}
+main{padding:20px 14px 45px}.card{background:white;border:1px solid #d6e1e5;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 12px #1127400b}
+h2{font-size:20px;margin:0 0 12px;color:var(--navy)} label{display:block;font-weight:700;font-size:14px;margin:12px 0 5px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #bacbd1;border-radius:10px;background:white;color:var(--ink);font:inherit}
+textarea{min-height:115px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{border:0;border-radius:10px;padding:13px 17px;font:inherit;font-weight:800;cursor:pointer}
+.primary{background:var(--teal);color:white}.secondary{background:var(--mint);color:var(--navy);border:1px solid #b7dddd}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.output{white-space:pre-wrap;background:#f7fafb;border:1px solid #d8e5e9;border-radius:12px;padding:16px;margin-top:12px}
+.pill{display:inline-block;background:var(--mint);color:#00686e;border-radius:100px;padding:3px 9px;font-size:12px;font-weight:800}
+.note{color:var(--muted);font-size:13px}
+footer{max-width:900px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font-size:12px}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="kicker">CONCEPT PROTOTYPE • NOT AN OFFICIAL SYNTHOMER SERVICE</div>
+<h1>Coatings Technical Intelligence Assistant</h1>
+<p>Describe a paint or coating issue to receive structured preliminary checks. This local demo uses illustrative rules only; it is not connected to Synthomer documents, products, customer records or a live AI model.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>Ask a technical question</h2>
+<label for="template">Choose how you want to try the demo</label>
+<select id="template" onchange="loadSelectedIssue()"><option value="" selected>Choose an option</option><option value="hdt16a-adhesion">Option 1 — Use the prepared issue: Adhesion issue on electrogalvanized steel - Pliotec HDT 16A formulation</option><option value="custom">Option 2 — Enter a different issue manually</option></select>
+<p class="note" id="modeHint">Option 1 loads the prepared electrogalvanized-steel adhesion case. Option 2 lets you describe another coating issue and receive general rule-based preliminary guidance. Both options use this same demo.</p>
+<div class="grid">
+<div><label for="system">Coating system</label><select id="system"><option>Water-based architectural paint</option><option>Water-based industrial coating</option><option>Solvent-based coating</option><option>Intumescent / fire-protective coating</option><option>Construction coating / primer</option><option>Not sure</option></select></div>
+<div><label for="stage">When does it occur?</label><select id="stage"><option>After application and fully dried</option><option>During application</option><option>During drying</option><option>After full cure</option><option>During storage</option><option>Not sure</option></select></div>
+</div>
+<label for="substrate">Substrate / surface</label><input id="substrate" placeholder="e.g., cement plaster, concrete, steel, wood">
+<label for="details">Problem, issue and question</label>
+<textarea id="details" placeholder="For Option 2, describe any issue, e.g. poor adhesion, foaming, cracking, slow drying, viscosity change or poor water resistance..."></textarea>
+<label for="formulation">Formulation details (optional)</label>
+<textarea id="formulation" placeholder="Enter binder, coalescent, pigment, water and additive details..."></textarea>
+<label for="constraints">Other details</label>
+<input id="constraints" value="n/a" placeholder="Other relevant details">
+<div class="btnrow">
+<button class="primary" onclick="answerQuestion()">Generate preliminary guidance</button>
+<button class="secondary" onclick="loadExample()">Load HDT 16A issue</button>
+<button class="secondary" onclick="clearForm()">Clear</button>
+</div>
+<p class="note">Please do not enter customer names, confidential formulations, personal information or other restricted data into this demo.</p>
+</section>
+<section class="card" id="resultCard" hidden>
+<h2>Preliminary guidance <span class="pill">DEMO OUTPUT</span></h2>
+<div class="output" id="answer"></div>
+<div class="btnrow"><button class="secondary" onclick="copyAnswer()">Copy answer</button><button class="secondary" onclick="downloadCase()">Download case summary</button></div>
+<p class="note">In a production platform, this section should cite approved source documents and similar resolved cases. A technical expert must validate formulation changes and safety-/compliance-critical advice.</p>
+</section>
+<section class="card">
+<h2>What a production version would add</h2>
+<ul>
+<li>Secure retrieval from approved TDS, SDS, application guides and closed cases.</li>
+<li>Evidence links, document version and confidence / uncertainty indication.</li>
+<li>Clarifying questions and escalation to a technical service expert.</li>
+<li>Role-based access, audit logs and controls for customer/IP-sensitive content.</li>
+<li>Expert feedback to improve the case library and future formulation insights.</li>
+</ul>
+</section>
+</main>
+<footer>Proof-of-concept only. Rule-based illustrative output, not a validated diagnosis or product recommendation. Do not use to make safety, regulatory, performance or formulation decisions without qualified review.</footer>
+<script>
+let lastAnswer = "";
+function answerQuestion(){
+ const system=document.getElementById('system').value;
+ const stage=document.getElementById('stage').value;
+ const substrate=document.getElementById('substrate').value.trim()||"Not provided";
+ const details=document.getElementById('details').value.trim();
+ const constraints=document.getElementById('constraints').value.trim()||"Not provided";
+ const formulation=document.getElementById('formulation').value.trim()||"Not provided";
+ if(!details){alert("Please describe the problem or objective first.");return;}
+ const t=details.toLowerCase();
+ let causes=[], checks=[], next=[], rootCause="", evidence="This prototype has not retrieved Synthomer documents or historical cases. The root cause below is a prioritised working hypothesis based on the symptom and supplied context, not a confirmed diagnosis.";
+ if(document.getElementById('template').value==="hdt16a-adhesion" || (/adhesion issue on (mild|electrogalvanized) steel/i.test(details) && /Pliotec HDT 16A/i.test(formulation))){
+  causes=[
+   "Pliotec HDT 16A is a relatively high-Tg (52°C) and high-MFFT binder. The effective coalescent level may be insufficient for good film formation under the test conditions, contributing to poor adhesion.",
+   "The coalescent dosage and ratio may not be optimised. The balance between high- and low-boiling-point coalescent agents is important for film formation and adhesion. High-boiling-point coalescent agents can lower MFFT but stay in the film longer, affecting hardness and adhesion."
+  ];
+  checks=[
+   "Confirm the adhesion test method, substrate preparation / cleanliness, dry-film thickness, drying conditions and failure plane (steel/coating interface versus cohesive film failure)."
+  ];
+  next=[
+   "Optimise the total coalescent dosage on a wt/wt binder basis. Increase the coalescent dosage to 9–10% wt/wt binder.",
+   "Test film formation and adhesion using DPnB : OE 300 at 80:20 or 70:30 ratios.",
+   "Test DPnB : OE 300 at 4:1 or 3.5:1.5, based on 55% binder in the total formulation."
+  ];
+  rootCause="The leading hypothesis is insufficient or unbalanced coalescence under the test conditions, potentially compounded by the electrogalvanized-steel surface condition. Confirm the failure plane and test conditions before treating this as the root cause.";
+  evidence="User-reported supporting Synthomer test data has not been attached to this demo; verify the report, dosage basis and test conditions before citing it as evidence.";
+ } else if(/patch|sheen|gloss|lap mark|flashing|uneven/.test(t)){
+  causes=["Uneven substrate porosity or absorption can cause different local film build and binder penetration, leading to patchy sheen or colour.","Uneven application or film thickness (including lap marks, roller loading and overlap) can leave areas with different surface texture and light reflection.","Dilution, mixing, tint strength, batch variation, or different temperature / humidity / airflow can change levelling and drying behaviour.","Insufficient or non-uniform primer, repairs, sanding, contamination or surface differences can cause localised flashing."];
+  rootCause="Most likely working hypothesis: non-uniform absorption and/or non-uniform dry-film thickness is producing different surface texture and sheen. If the substrate and film build are uniform, investigate formulation stability, application dilution and drying conditions next.";
+  checks=["Confirm substrate preparation and primer uniformity; check for repairs, porous areas or contamination.","Verify dilution against the current product instructions, mixing method and wet-film build; avoid assuming extra water is acceptable.","Record temperature, humidity, airflow and recoat interval; compare affected and unaffected areas.","Run a controlled drawdown / repaint comparison on a prepared panel before changing the formulation."];
+  next=["Check batch and application records; compare sheen under consistent lighting.","If the defect persists, submit photos and a retained sample to Technical Service for structured root-cause analysis."];
+ } else if(/adhesion|peel|peeling|flak|delaminat/.test(t)){
+  causes=["Surface contamination (oil, grease, dust, salts, release agents) or inadequate surface preparation can prevent wetting and interfacial bonding.","A weak boundary layer, corrosion / oxidation, loose substrate material or unsuitable substrate treatment can fail even if the coating film itself is sound.","Incomplete film formation or cure, unsuitable binder / coalescent balance, excessive film thickness, or drying outside the recommended conditions can reduce cohesive strength or adhesion.","An incompatible primer / topcoat combination or recoating outside the permitted interval can cause intercoat delamination.","The adhesion test method, conditioning, substrate roughness and scoring / pull-off procedure can influence the reported result."];
+  rootCause="Most likely working hypothesis: either the coating/substrate interface is contaminated or poorly prepared, or the film has not developed sufficient cohesive strength. The failure plane is the key discriminator: coating comes cleanly off the substrate suggests an interface issue; coating remains on the substrate but splits within itself suggests a film-formation / cohesion issue.";
+  checks=["Identify substrate and all coating layers; check surface cleanliness, moisture and preparation.","Check recoat interval, cure conditions and the specified adhesion test method.","Compare failure plane: substrate/coating, between coats, or within the coating film."];
+  next=["Do not recommend a binder or additive change until the failure plane and substrate condition are established.","Collect photos, preparation details, film thickness and adhesion-test results for expert review."];
+ } else if(/foam|bubble|pinhol|crater|defoam/.test(t)){
+  causes=["Air entrainment from high-shear mixing, pumping, circulation or application can leave bubbles that do not escape before viscosity rises.","Substrate porosity or outgassing, especially on warm or porous surfaces, can release air or vapour into the wet film.","Poor wetting, contamination, incompatible additives or silicone / oil contamination can create craters or fisheyes.","Excessive film thickness, fast surface drying or an unsuitable defoamer / wetting-agent balance can trap bubbles or leave pinholes."];
+  rootCause="Most likely working hypothesis: bubbles are being introduced or released faster than they can escape before the film sets. If defects are crater-like rather than round bubbles, prioritise contamination and surface-wetting / additive compatibility instead.";
+  checks=["Check mixing speed, addition sequence, pumping and application method.","Inspect substrate porosity, contamination and surface temperature.","Compare a controlled panel with the current process; evaluate a compatible defoamer only through a small, documented trial."];
+  next=["Avoid blindly increasing defoamer dosage: compatibility, surface defects and film properties must be assessed together."];
+ } else if(/viscos|thick|thin|settle|sediment|storage|separat/.test(t)){
+  causes=["Temperature, storage duration, freeze-thaw / heat exposure or inadequate mixing can change viscosity or cause settling and separation.","pH drift, electrolyte contamination or changes in raw-material lots can destabilise a water-based dispersion.","Pigment / filler dispersion, dispersant demand, thickener type or dosage, and binder-additive compatibility may be unbalanced.","Insufficient anti-settling structure or excessive density difference can allow pigment / filler sedimentation; irreversible hard settling suggests a stability problem."];
+  rootCause="Most likely working hypothesis: a stability or rheology imbalance, potentially triggered by pH / electrolyte or raw-material variation. If the change appears only after storage, prioritise storage history and accelerated stability comparisons; if it appears immediately after manufacture, prioritise addition sequence, dispersion and rheology balance.";
+  checks=["Confirm batch age, storage temperature, freeze/thaw or heat exposure and mixing history.","Measure viscosity using the same method, spindle, speed and temperature; record pH and appearance.","Compare raw-material lots and batch records with a known-good sample."];
+  next=["Do not adjust pH or add thickener without confirming the formulation system and approved adjustment procedure."];
+ } else if(/dry|slow|tack|block|cure/.test(t)){
+  causes=["Low temperature, high humidity or poor airflow can slow water / solvent release and delay film formation.","Excessive wet-film thickness, substrate moisture or insufficient time between coats can delay drying or cause persistent tack.","For water-based paints, insufficient coalescence due to high MFFT / Tg, low coalescent level or poor coalescent balance can leave a weak or tacky film.","Incompatible additives, excessive plasticisation, or a binder / crosslinker cure limitation may delay hardness development or cause blocking."];
+  rootCause="Most likely working hypothesis: the film is not reaching the required drying / coalescence / cure state under the actual film thickness and environmental conditions. First separate slow water loss from a formulation-related film-formation or cure limitation.";
+  checks=["Record ambient and substrate temperature, relative humidity, airflow and film thickness.","Confirm product instructions, substrate moisture and time between coats.","Compare a controlled thin-film panel with the affected application; assess after the stated cure period."];
+  next=["For performance-critical coatings, verify cure and final properties using the approved test method before release."];
+ } else if(/rust|corrosion|flash rust|rusting/.test(t)){
+  causes=["Residual moisture, salts, contamination or inadequate cleaning on the substrate can initiate corrosion beneath the coating.","Insufficient dry-film thickness, pinholes or poor edge coverage can leave pathways for water and oxygen.","The primer / coating system may not provide the required corrosion protection for the substrate and exposure environment.","Early water exposure, incomplete cure or poor adhesion can allow underfilm corrosion to spread."];
+  rootCause="Most likely working hypothesis: moisture / electrolyte access to the metal through contamination, poor adhesion or discontinuities in the film. Determine whether corrosion starts at edges / defects or spreads under an apparently intact film to distinguish application defects from system-level protection limits.";
+  checks=["Identify substrate metal, pretreatment, primer/topcoat system and exposure conditions.","Inspect rust location and film defects; measure dry-film thickness and check edges, welds and pinholes.","Check surface cleanliness / salts, drying and cure before coating, and the relevant corrosion test results.","Compare a controlled panel with verified preparation and specified film build."];
+  next=["Prioritise correction of substrate preparation and film continuity before changing additives.","If the coating system still fails with verified preparation and film build, review the primer / binder system against the required corrosion category and test method."];
+ } else if(/water resistance|water spot|water whitening|whitening|blush/.test(t)){
+  causes=["Incomplete coalescence or cure can leave a porous / weak film that absorbs water and whitens.","Hydrophilic surfactants, dispersants or other water-sensitive additives may migrate or leach during water exposure.","Excessive film thickness, early water exposure or insufficient drying / conditioning time can exaggerate water whitening.","Poor substrate preparation or intercoat adhesion can allow water to penetrate and cause blistering or delamination."];
+  rootCause="Most likely working hypothesis: the film has not developed sufficient water resistance because of incomplete film formation / cure or water-sensitive components. If whitening disappears after drying, investigate reversible water uptake; if it remains, check leaching, blistering and adhesion loss.";
+  checks=["Confirm immersion / spot-test method, water temperature, exposure duration and recovery time after drying.","Record film thickness, drying / cure time and ambient conditions before exposure.","Check whether whitening is reversible and whether the film softens, blisters, erodes or loses adhesion.","Compare controlled films with adequate cure and a formulation / additive variable changed one at a time."];
+  next=["Repeat the water-resistance test after the specified conditioning period using consistent film thickness.","If the defect persists, screen film formation and water-sensitive additives in controlled drawdowns before making a production change."];
+ } else {
+  causes=["The symptom may arise from the binder / film-formation mechanism, the substrate / interface, application conditions, or formulation stability; the wording alone does not identify which mechanism dominates.","A process variable (raw-material lot, addition sequence, mixing energy, film thickness, temperature or humidity) may differ from a known-good batch or application.","The apparent defect may be a secondary symptom of another issue, such as poor wetting, incomplete cure, contamination or unstable dispersion."];
+  rootCause="A single root cause cannot be prioritised reliably from the information entered. The best first hypothesis is the mechanism most closely linked to when the defect appears: during manufacture (dispersion / compatibility), during application (wetting / air entrainment / film build), during drying (coalescence / evaporation / cure), or after exposure (water / chemical / UV / corrosion resistance).";
+  checks=["Record the exact product/system, substrate, preparation, application method and film thickness.","Describe when the defect first appeared and whether it is localised or widespread.","Share relevant measurements, photos and comparison with a known-good sample (through an approved secure channel)."];
+  checks=["Describe the visible symptom and when it first appears: manufacture, application, drying, after full cure, or after exposure.","Record binder / product, substrate and preparation, full formulation with dosage basis, mixing / addition sequence, application method and wet / dry-film thickness.","Compare affected and known-good samples; check pH, viscosity, temperature / humidity, drying time and relevant performance test results.","Change one variable at a time in a controlled drawdown or lab batch so the effect can be linked to a cause."];
+  next=["Use the timing and failure appearance to narrow the mechanism, then run a controlled test against a known-good reference.","For safety-, compliance-, fire-performance- or corrosion-critical systems, confirm with the approved test method before release."];
+ }
+ const text = (document.getElementById('template').value==="hdt16a-adhesion") ?
+ "QUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
+ "\n\nPOSSIBLE CAUSES\n\n"+causes.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nCHECKS TO PRIORITISE\n\n"+checks.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nSUGGESTED NEXT STEP\n\n"+next.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nEVIDENCE STATUS\n"+evidence :
+ "QUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
+ "\n\nPOSSIBLE CAUSES\n"+causes.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nROOT-CAUSE HYPOTHESIS (PRIORITISED, NOT CONFIRMED)\n"+rootCause+
+ "\n\nCHECKS TO PRIORITISE\n"+checks.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nSUGGESTED NEXT STEP\n"+next.map((x,i)=>(i+1)+". "+x).join("\n")+
+ "\n\nEVIDENCE STATUS\n"+evidence;
+ lastAnswer=text;
+ document.getElementById('answer').textContent=text;
+ document.getElementById('resultCard').hidden=false;
+ document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function loadSelectedIssue(){
+ const choice=document.getElementById('template').value;
+ const hint=document.getElementById('modeHint');
+ if(hint){
+  hint.textContent = choice==='hdt16a-adhesion' ? 'Prepared case selected: the question, substrate and formulation are filled in below. You can review them and generate the specific HDT 16A guidance.' : choice==='custom' ? 'Manual issue selected: type any coating problem or technical question below, add the context you know, then generate general rule-based preliminary guidance.' : 'Choose Option 1 to load the prepared HDT 16A adhesion case, or Option 2 to type a different coating issue. Both options use this same demo.';
+ }
+ if(choice==='hdt16a-adhesion'){
+  document.getElementById('resultCard').hidden=true;
+  document.getElementById('system').value='Water-based architectural paint';
+  document.getElementById('stage').value='After application and fully dried';
+  document.getElementById('substrate').value='electrogalvanized steel';
+  document.getElementById('details').value='Formulation as below\n1) Pliotec HDT 16A: 55%\n2) OE 300: 2%\n3) Dowanol DPnB: 0.5%\n4) White pigment: 20%\n5) Remaining: water, additives and dispersing agent.\nPlease advise how to improve the adhesion.';
+  document.getElementById('formulation').value='Pliotec HDT 16A: 55%\nOE 300: 2%\nDowanol DPnB: 0.5%\nWhite pigment: 20%\nRemaining: water, additives and dispersing agent.';
+  document.getElementById('constraints').value='n/a';
+ } else if(choice==='custom'){
+  document.getElementById('resultCard').hidden=true;
+  document.getElementById('details').value='';
+  document.getElementById('formulation').value='';
+  document.getElementById('constraints').value='n/a';
+ }
+}
+function loadExample(){
+ document.getElementById('template').value='hdt16a-adhesion';
+ loadSelectedIssue();
+}
+function clearForm(){
+ document.getElementById('template').value='';
+ const hint=document.getElementById('modeHint');if(hint)hint.textContent='Choose Option 1 to load the prepared HDT 16A adhesion case, or Option 2 to type a different coating issue. Both options use this same demo.';
+ ['substrate','details','formulation'].forEach(id=>document.getElementById(id).value='');
+ document.getElementById('constraints').value='n/a';
+ document.getElementById('resultCard').hidden=true;lastAnswer='';
+}
+async function copyAnswer(){
+ try{await navigator.clipboard.writeText(lastAnswer);alert('Answer copied.');}
+ catch(e){alert('Copy is not available in this browser. Select and copy the answer text manually.');}
+}
+function downloadCase(){
+ if(!lastAnswer)return;
+ const blob=new Blob([lastAnswer],{type:'text/plain;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='coatings-demo-case.txt';a.click();URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
