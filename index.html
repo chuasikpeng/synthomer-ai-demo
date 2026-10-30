@@ -15,7 +15,7 @@ main{padding:20px 14px 45px}.card{background:white;border:1px solid #d6e1e5;bord
 h2{font-size:20px;margin:0 0 12px;color:var(--navy)} label{display:block;font-weight:700;font-size:14px;margin:12px 0 5px}
 input,select,textarea{width:100%;padding:12px;border:1px solid #bacbd1;border-radius:10px;background:white;color:var(--ink);font:inherit}
 textarea{min-height:115px;resize:vertical}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.identity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 button{border:0;border-radius:10px;padding:13px 17px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--teal);color:white}.secondary{background:var(--mint);color:var(--navy);border:1px solid #b7dddd}
 .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
@@ -23,7 +23,7 @@ button{border:0;border-radius:10px;padding:13px 17px;font:inherit;font-weight:80
 .pill{display:inline-block;background:var(--mint);color:#00686e;border-radius:100px;padding:3px 9px;font-size:12px;font-weight:800}
 .note{color:var(--muted);font-size:13px}
 footer{max-width:900px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font-size:12px}
-@media(max-width:620px){.grid{grid-template-columns:1fr}.card{padding:16px}}
+@media(max-width:620px){.grid,.identity-grid{grid-template-columns:1fr}.card{padding:16px}}
 </style>
 </head>
 <body>
@@ -35,23 +35,29 @@ footer{max-width:900px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font
 <main>
 <section class="card">
 <h2>Ask a technical question</h2>
+ <div class="identity-grid">
+  <div><label for="userName">Name</label><input id="userName" type="text" placeholder="Enter your name" required></div>
+  <div><label for="userEmail">Email address</label><input id="userEmail" type="email" placeholder="Enter your email address" required></div>
+  <div><label for="userCompany">Company</label><input id="userCompany" type="text" placeholder="Enter your company name" required></div>
+ </div>
+ <p class="note">Please provide your contact details before submitting a technical question.</p>
 <label for="template">Choose how you want to try the demo</label>
-<select id="template" onchange="loadSelectedIssue()"><option value="" selected>Choose an option</option><option value="hdt16a-adhesion">Option 1 — Use the prepared issue: Adhesion issue on electrogalvanized steel - Pliotec HDT 16A formulation</option><option value="custom">Option 2 — Enter a different issue manually</option></select>
-<p class="note" id="modeHint">Option 1 loads the prepared electrogalvanized-steel adhesion case. Option 2 lets you describe another coating issue and receive general rule-based preliminary guidance. Both options use this same demo.</p>
+<select id="template" onchange="loadSelectedIssue()"><option value="" selected>Choose an option</option><option value="custom">Option 1 — Enter an issue manually</option><option value="hdt16a-adhesion">Option 2 — Use the prepared issue: Pliotec HDT 16A adhesion case</option></select>
+<p class="note" id="modeHint">Option 1 lets you enter a coating issue manually. Option 2 loads the prepared Pliotec HDT 16A adhesion case. Both options use this same demo.</p>
 <div class="grid">
-<div><label for="system">Coating system</label><select id="system"><option>Water-based architectural paint</option><option>Water-based industrial coating</option><option>Solvent-based coating</option><option>Intumescent / fire-protective coating</option><option>Construction coating / primer</option><option>Not sure</option></select></div>
-<div><label for="stage">When does it occur?</label><select id="stage"><option>After application and fully dried</option><option>During application</option><option>During drying</option><option>After full cure</option><option>During storage</option><option>Not sure</option></select></div>
+<div><label for="system">Coating system</label><select id="system"><option value="" selected disabled>Please select a coating system</option><option>Water-based architectural paint</option><option>Water-based industrial coating</option><option>Solvent-based coating</option><option>Intumescent / fire-protective coating</option><option>Construction coating / primer</option><option>Not sure</option></select></div>
+<div><label for="stage">When does it occur?</label><select id="stage"><option value="" selected disabled>Please select when it occurs</option><option>After application and fully dried</option><option>During application</option><option>During drying</option><option>After full cure</option><option>During storage</option><option>Not sure</option></select></div>
 </div>
 <label for="substrate">Substrate / surface</label><input id="substrate" placeholder="e.g., cement plaster, concrete, steel, wood">
 <label for="details">Problem, issue and question</label>
-<textarea id="details" placeholder="For Option 2, describe any issue, e.g. poor adhesion, foaming, cracking, slow drying, viscosity change or poor water resistance..."></textarea>
+<textarea id="details" placeholder="For Option 1, describe any issue, e.g. poor adhesion, foaming, cracking, slow drying, viscosity change or poor water resistance..."></textarea>
 <label for="formulation">Formulation details (optional)</label>
 <textarea id="formulation" placeholder="Enter binder, coalescent, pigment, water and additive details..."></textarea>
 <label for="constraints">Other details</label>
 <input id="constraints" value="n/a" placeholder="Other relevant details">
 <div class="btnrow">
 <button class="primary" onclick="answerQuestion()">Generate preliminary guidance</button>
-<button class="secondary" onclick="loadExample()">Load HDT 16A issue</button>
+<button class="secondary" onclick="loadExample()">Load prepared HDT 16A case</button>
 <button class="secondary" onclick="clearForm()">Clear</button>
 </div>
 <p class="note">Please do not enter customer names, confidential formulations, personal information or other restricted data into this demo.</p>
@@ -77,6 +83,17 @@ footer{max-width:900px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font
 <script>
 let lastAnswer = "";
 function answerQuestion(){
+  const userName=document.getElementById('userName').value.trim();
+  const userEmail=document.getElementById('userEmail').value.trim();
+  const userCompany=document.getElementById('userCompany').value.trim();
+  if(!userName || !userEmail || !userCompany){
+    alert("Please enter your name, email address and company before submitting your question.");
+    return;
+  }
+  if(!document.getElementById('userEmail').checkValidity()){
+    alert("Please enter a valid email address.");
+    return;
+  }
  const system=document.getElementById('system').value;
  const stage=document.getElementById('stage').value;
  const substrate=document.getElementById('substrate').value.trim()||"Not provided";
@@ -99,7 +116,7 @@ function answerQuestion(){
    "Test film formation and adhesion using DPnB : OE 300 at 80:20 or 70:30 ratios.",
    "Test DPnB : OE 300 at 4:1 or 3.5:1.5, based on 55% binder in the total formulation."
   ];
-  rootCause="The leading hypothesis is insufficient or unbalanced coalescence under the test conditions, potentially compounded by the electrogalvanized-steel surface condition. Confirm the failure plane and test conditions before treating this as the root cause.";
+  rootCause="The leading hypothesis is insufficient or unbalanced coalescence under the test conditions, potentially compounded by the substrate surface condition. Confirm the substrate, failure plane and test conditions before treating this as the root cause.";
   evidence="User-reported supporting Synthomer test data has not been attached to this demo; verify the report, dosage basis and test conditions before citing it as evidence.";
  } else if(/patch|sheen|gloss|lap mark|flashing|uneven/.test(t)){
   causes=["Uneven substrate porosity or absorption can cause different local film build and binder penetration, leading to patchy sheen or colour.","Uneven application or film thickness (including lap marks, roller loading and overlap) can leave areas with different surface texture and light reflection.","Dilution, mixing, tint strength, batch variation, or different temperature / humidity / airflow can change levelling and drying behaviour.","Insufficient or non-uniform primer, repairs, sanding, contamination or surface differences can cause localised flashing."];
@@ -144,12 +161,12 @@ function answerQuestion(){
   next=["Use the timing and failure appearance to narrow the mechanism, then run a controlled test against a known-good reference.","For safety-, compliance-, fire-performance- or corrosion-critical systems, confirm with the approved test method before release."];
  }
  const text = (document.getElementById('template').value==="hdt16a-adhesion") ?
- "QUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
+ "SUBMITTED BY\nName: "+userName+"\nEmail: "+userEmail+"\nCompany: "+userCompany+"\n\nQUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
  "\n\nPOSSIBLE CAUSES\n\n"+causes.map((x,i)=>(i+1)+". "+x).join("\n")+
  "\n\nCHECKS TO PRIORITISE\n\n"+checks.map((x,i)=>(i+1)+". "+x).join("\n")+
  "\n\nSUGGESTED NEXT STEP\n\n"+next.map((x,i)=>(i+1)+". "+x).join("\n")+
  "\n\nEVIDENCE STATUS\n"+evidence :
- "QUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
+ "SUBMITTED BY\nName: "+userName+"\nEmail: "+userEmail+"\nCompany: "+userCompany+"\n\nQUESTION\n"+details+"\n\nCONTEXT\nSystem: "+system+"\nStage: "+stage+"\nSubstrate: "+substrate+"\nFormulation: "+formulation+"\nOther details: "+constraints+
  "\n\nPOSSIBLE CAUSES\n"+causes.map((x,i)=>(i+1)+". "+x).join("\n")+
  "\n\nROOT-CAUSE HYPOTHESIS (PRIORITISED, NOT CONFIRMED)\n"+rootCause+
  "\n\nCHECKS TO PRIORITISE\n"+checks.map((x,i)=>(i+1)+". "+x).join("\n")+
@@ -164,7 +181,7 @@ function loadSelectedIssue(){
  const choice=document.getElementById('template').value;
  const hint=document.getElementById('modeHint');
  if(hint){
-  hint.textContent = choice==='hdt16a-adhesion' ? 'Prepared case selected: the question, substrate and formulation are filled in below. You can review them and generate the specific HDT 16A guidance.' : choice==='custom' ? 'Manual issue selected: type any coating problem or technical question below, add the context you know, then generate general rule-based preliminary guidance.' : 'Choose Option 1 to load the prepared HDT 16A adhesion case, or Option 2 to type a different coating issue. Both options use this same demo.';
+  hint.textContent = choice==='hdt16a-adhesion' ? 'Prepared case selected: the question, electrogalvanized-steel substrate and formulation are filled in below. Review them, then generate the specific HDT 16A guidance.' : choice==='custom' ? 'Manual issue selected: type any coating problem or technical question below, add the context you know, then generate general rule-based preliminary guidance.' : 'Choose Option 1 to type a coating issue manually, or Option 2 to load the prepared HDT 16A adhesion case. Both options use this same demo.';
  }
  if(choice==='hdt16a-adhesion'){
   document.getElementById('resultCard').hidden=true;
@@ -176,6 +193,9 @@ function loadSelectedIssue(){
   document.getElementById('constraints').value='n/a';
  } else if(choice==='custom'){
   document.getElementById('resultCard').hidden=true;
+  document.getElementById('system').value='';
+  document.getElementById('stage').value='';
+  document.getElementById('substrate').value='';
   document.getElementById('details').value='';
   document.getElementById('formulation').value='';
   document.getElementById('constraints').value='n/a';
@@ -187,8 +207,10 @@ function loadExample(){
 }
 function clearForm(){
  document.getElementById('template').value='';
- const hint=document.getElementById('modeHint');if(hint)hint.textContent='Choose Option 1 to load the prepared HDT 16A adhesion case, or Option 2 to type a different coating issue. Both options use this same demo.';
- ['substrate','details','formulation'].forEach(id=>document.getElementById(id).value='');
+ const hint=document.getElementById('modeHint');if(hint)hint.textContent='Choose Option 1 to type a coating issue manually, or Option 2 to load the prepared HDT 16A adhesion case. Both options use this same demo.';
+ ['substrate','details','formulation','userName','userEmail','userCompany'].forEach(id=>document.getElementById(id).value='');
+ document.getElementById('system').value='';
+ document.getElementById('stage').value='';
  document.getElementById('constraints').value='n/a';
  document.getElementById('resultCard').hidden=true;lastAnswer='';
 }
